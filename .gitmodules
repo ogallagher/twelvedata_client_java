@@ -1,0 +1,6 @@
+[submodule "src/temp_fx_logger"]
+	path = src/temp_fx_logger
+	url = http://github.com/ogallagher/temp_fx_logger.git
+[submodule "temp_fx_logger"]
+	path = temp_fx_logger
+	url = http://github.com/ogallagher/temp_fx_logger.git
