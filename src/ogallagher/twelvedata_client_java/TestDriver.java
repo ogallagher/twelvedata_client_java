@@ -1,8 +1,7 @@
-package twelvedata_client_java;
+package ogallagher.twelvedata_client_java;
 
 import javafx.embed.swing.JFXPanel;
-
-import temp_fx_logger.System;
+import ogallagher.temp_fx_logger.System;
 
 /**
  * Test TwelvedataClient with a dummy parent application.
@@ -25,8 +24,7 @@ public class TestDriver {
 	public static void main(String[] args) {
 		System.out.println("running twelvedata_client_java.TestDriver");
 		
-		String apiKey = "api-key";
-		TwelvedataClient tdclient = new TwelvedataClient(apiKey);
+		TwelvedataClient tdclient = new TwelvedataClient();
 		
 		System.out.println("twelvedata_client_java.TestDriver done");
 	}
