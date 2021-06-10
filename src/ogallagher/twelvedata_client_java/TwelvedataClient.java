@@ -3,6 +3,7 @@ package ogallagher.twelvedata_client_java;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.HashMap;
 
@@ -37,7 +38,7 @@ public class TwelvedataClient {
 	private final static Retrofit retrofit;
 	private final static TwelvedataInterface api;
 	
-	public static final String CONFIG_FILE = TwelvedataClient.class.getResource("resources/config.json").getPath();
+	public static final URL CONFIG_FILE = TwelvedataClient.class.getResource("resources/config.json");
 	public static final String CONFIG_KEY_API_KEY = "api_key";
 	private static HashMap<String,String> config = new HashMap<String,String>();
 	
@@ -52,27 +53,33 @@ public class TwelvedataClient {
 		api = retrofit.create(TwelvedataInterface.class);
 		
 		// define config
-		File configFile = new File(CONFIG_FILE);
-		if (!configFile.exists()) {
-			System.out.println("ERROR: config file missing: " + configFile.getAbsolutePath());
-		}
-		else {
-			System.out.println("reading config file " + configFile.getAbsolutePath());
-			try {
-				JsonReader reader = new JsonReader(new FileReader(configFile));
-				reader.beginObject();
-				
-				while (reader.hasNext()) {
-					String key = reader.nextName();
-					String value = reader.nextString();
+		if (CONFIG_FILE != null) {
+			File configFile = new File(CONFIG_FILE.getPath());
+			
+			if (!configFile.exists()) {
+				System.out.println("ERROR: config file missing: " + configFile.getAbsolutePath());
+			}
+			else {
+				System.out.println("reading config file " + configFile.getAbsolutePath());
+				try {
+					JsonReader reader = new JsonReader(new FileReader(configFile));
+					reader.beginObject();
 					
-					config.put(key, value);
-					System.out.println("config." + key + "=" + value);
+					while (reader.hasNext()) {
+						String key = reader.nextName();
+						String value = reader.nextString();
+						
+						config.put(key, value);
+						System.out.println("config." + key + "=" + value);
+					}
+				}
+				catch (IOException e) {
+					System.out.println(e.getMessage());
 				}
 			}
-			catch (IOException e) {
-				System.out.println(e.getMessage());
-			}
+		}
+		else {
+			System.out.println("WARNING: twelvedata client has no config file");
 		}
 	}
 	
@@ -147,8 +154,8 @@ public class TwelvedataClient {
 	private boolean testFetchTimeSeries() {
 		final String TEST_SYMBOL = "AAPL";
 		final String TEST_INTERVAL = BarInterval.DY_1;
-		final LocalDate TEST_START_DATE = LocalDate.of(2020, 1, 1);
-		final LocalDate TEST_END_DATE = LocalDate.of(2020, 1, 8);
+		final LocalDate TEST_START_DATE = LocalDate.of(2021, 1, 1);
+		final LocalDate TEST_END_DATE = LocalDate.of(2021, 1, 2);
 		
 		TimeSeries timeSeries = fetchTimeSeries(TEST_SYMBOL, TEST_INTERVAL, TEST_START_DATE, TEST_END_DATE);
 		if (timeSeries != null) {
