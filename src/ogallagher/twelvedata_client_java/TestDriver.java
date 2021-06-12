@@ -1,6 +1,7 @@
 package ogallagher.twelvedata_client_java;
 
-import javafx.embed.swing.JFXPanel;
+import javafx.application.Application;
+import javafx.stage.Stage;
 import ogallagher.temp_fx_logger.System;
 
 /**
@@ -9,12 +10,6 @@ import ogallagher.temp_fx_logger.System;
  * @author Owen Gallagher
  */
 public class TestDriver {
-	/**
-	 * Prevents "Java Toolkit Not Initialized Error".
-	 * I don't really get it, but an extra line doesn't do much harm anyway.
-	 */
-	@SuppressWarnings("unused") 
-	private static JFXPanel dummyPanel = new JFXPanel();
 	
 	/**
 	 * TestDriver entrypoint.
@@ -22,10 +17,26 @@ public class TestDriver {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("running twelvedata_client_java.TestDriver");
+		TestDriverGUI.main(args);
+	}
+	
+	/**
+	 * Creating a hidden javafx application class behind the endpoint is an alternative to converting a project
+	 * to a module in order to use javafx with java 9+.
+	 * 
+	 * @author Owen Gallagher
+	 * @since 12 June 2021
+	 */
+	public static class TestDriverGUI extends Application {
+		public static void main(String[] args) {
+			launch(args);
+			
+			System.out.println("twelvedata_client_java.TestDriver done");
+		}
 		
-		TwelvedataClient tdclient = new TwelvedataClient();
-		
-		System.out.println("twelvedata_client_java.TestDriver done");
+		@Override
+		public void start(Stage primaryStage) throws Exception {
+			TwelvedataClient tdclient = new TwelvedataClient();
+		}
 	}
 }

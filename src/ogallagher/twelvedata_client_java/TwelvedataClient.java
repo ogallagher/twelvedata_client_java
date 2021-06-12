@@ -18,7 +18,6 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-
 /**
  * Java client that pulls market data from the 
  * <a href="https://twelvedata.com/blog/first-introduction-getting-an-advantage-in-a-few-minutes">
