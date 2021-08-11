@@ -3,6 +3,7 @@ package ogallagher.twelvedata_client_java;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import ogallagher.temp_fx_logger.System;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 
 /**
  * Test TwelvedataClient with a dummy parent application.
@@ -37,6 +38,26 @@ public class TestDriver {
 		@Override
 		public void start(Stage primaryStage) throws Exception {
 			TwelvedataClient tdclient = new TwelvedataClient();
+			
+			if (tdclient.testFetchTimeSeries()) {
+				System.out.println("twelvedata client can fetch a time series");
+				
+				String[] symbols = new String[] {
+					"AAPL",
+					"BAC"
+				};
+				String[] widths = new String[] {
+					BarInterval.HR_1,
+					BarInterval.DY_1,
+					BarInterval.WK_1
+				};
+				
+				System.out.println(
+					"testing price history fetch for " + 
+					symbols.length + " symbols and " + 
+					widths.length + " bar widths"
+				);
+			}
 		}
 	}
 }

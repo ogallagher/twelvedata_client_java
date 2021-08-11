@@ -31,8 +31,8 @@ public interface TwelvedataInterface {
 	Call<TimeSeries> timeSeries(
 		@Query("symbol") String symbol,
 		@Query("interval") String interval,
-		@Query("startDate") String startDate,
-		@Query("endDate") String endDate,
+		@Query("start_date") String startDate,
+		@Query("end_date") String endDate,
 		@Query("apikey") String apiKey
 	);
 	

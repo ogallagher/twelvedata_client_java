@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.HashMap;
 
 import com.google.gson.stream.JsonReader;
@@ -30,7 +31,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  */
 public class TwelvedataClient {
-	public static final String VERSION = "0.0.1";
+	public static final String VERSION = "0.1.0";
 	
 	public static final String API_PREFIX = "https://api.twelvedata.com";
 	
@@ -97,9 +98,6 @@ public class TwelvedataClient {
 			System.out.println("WARNING: twelvedata client initialized without api key");
 			this.key = null;
 		}
-		else if (!testFetchTimeSeries()) {
-			System.out.println("ERROR: twelvedata client failed to connect to api endpoint");
-		}
 		
 		System.out.println("init new " + this);
 	}
@@ -150,16 +148,24 @@ public class TwelvedataClient {
 		}
 	}
 	
-	private boolean testFetchTimeSeries() {
+	/**
+	 * Attempts to get one week of daily close prices for AAPL.
+	 * 
+	 * @return {@code true} if the resulting {@link TimeSeries} is not {@code null}.
+	 */
+	public boolean testFetchTimeSeries() {
 		final String TEST_SYMBOL = "AAPL";
 		final String TEST_INTERVAL = BarInterval.DY_1;
 		final LocalDate TEST_START_DATE = LocalDate.of(2021, 1, 1);
-		final LocalDate TEST_END_DATE = LocalDate.of(2021, 1, 2);
+		final LocalDate TEST_END_DATE = LocalDate.of(2021, 1, 7);
+		System.out.println("expecting " + Period.between(TEST_START_DATE, TEST_END_DATE).getDays() + " x " + TEST_INTERVAL);
 		
 		TimeSeries timeSeries = fetchTimeSeries(TEST_SYMBOL, TEST_INTERVAL, TEST_START_DATE, TEST_END_DATE);
 		if (timeSeries != null) {
 			System.out.println("timeSeries.meta = " + timeSeries.meta);
-			System.out.println("timeSeries.values[0] = " + timeSeries.values.get(0));
+			for (int i=0; i<timeSeries.values.size(); i++) {
+				System.out.println("timeSeries.values[" + i + "] = " + timeSeries.values.get(i));
+			}
 			return true;
 		}
 		else {
@@ -171,7 +177,7 @@ public class TwelvedataClient {
 		String out = 
 			"TwelvedataClient(" + 
 			this.key +
-			')';
+			")";
 		
 		return out;
 	}
