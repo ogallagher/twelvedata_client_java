@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import com.google.gson.stream.JsonReader;
 
@@ -41,6 +44,13 @@ public class TwelvedataClient {
 	public static final URL CONFIG_FILE = TwelvedataClient.class.getResource("resources/config.json");
 	public static final String CONFIG_KEY_API_KEY = "api_key";
 	private static HashMap<String,String> config = new HashMap<String,String>();
+	
+	private static Calendar calendar;
+	
+	/**
+	 * Max api calls per minute, according to the free plan.
+	 */
+	private static final int MAX_CALLS_PER_MINUTE_FREE = 8;
 	
 	static {
 		// define retrofit
@@ -81,12 +91,23 @@ public class TwelvedataClient {
 		else {
 			System.out.println("WARNING: twelvedata client has no config file");
 		}
+		
+		// define calendar
+		calendar = Calendar.getInstance();
 	}
 	
 	/**
 	 * API key required to access twelvedata.
 	 */
 	private String key = null;
+	/**
+	 * Max number of API calls per minute.
+	 */
+	private int maxCallsPerMinute;
+	/**
+	 * History of call timestamps, newest first.
+	 */
+	private LinkedList<Long> callHistory = new LinkedList<>();
 	
 	public TwelvedataClient() {
 		this(config.get(CONFIG_KEY_API_KEY));
@@ -98,6 +119,8 @@ public class TwelvedataClient {
 			System.out.println("WARNING: twelvedata client initialized without api key");
 			this.key = null;
 		}
+		
+		this.maxCallsPerMinute = MAX_CALLS_PER_MINUTE_FREE;
 		
 		System.out.println("init new " + this);
 	}
@@ -112,39 +135,76 @@ public class TwelvedataClient {
 	 * @return {@link TimeSeries} or <code>null<code>.
 	 */
 	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDate startDate, LocalDate endDate) {
-		try {
-			System.out.println("fetching time series");
-			Response<TimeSeries> res = api
-				.timeSeries(symbol, interval, startDate.toString(), startDate.toString(), key)
-				.execute();
-			
-			if (res != null) {
-				if (res.isSuccessful()) {
-					TimeSeries timeSeries = res.body();
-					
-					if (!timeSeries.isFailure()) {
-						System.out.println("fetched time series of length " + timeSeries.values.size());
-						return timeSeries;
+		if (callAllowed()) {
+			try {
+				System.out.println("fetching time series");
+				Response<TimeSeries> res = api
+					.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
+					.execute();
+				
+				TimeSeries out = null;
+				
+				if (res != null) {
+					if (res.isSuccessful()) {
+						TimeSeries timeSeries = res.body();
+						
+						if (!timeSeries.isFailure()) {
+							System.out.println("fetched time series of length " + timeSeries.values.size());
+							out = timeSeries;
+						}
+						else {
+							System.out.println(((Failure) timeSeries).toString());
+							System.out.println("api error");
+						}
 					}
 					else {
-						System.out.println(((Failure) timeSeries).toString());
-						System.out.println("api error");
-						return null;
+						System.out.println(res.errorBody().string());
 					}
 				}
 				else {
-					System.out.println(res.errorBody().string());
-					return null;
+					System.out.println("http api response is null");
 				}
+				
+				callHistory.addFirst(new Date().getTime());
+				return out;
 			}
-			else {
-				System.out.println("http api response is null");
+			catch (IOException e) {
+				System.out.println(e.getMessage());
 				return null;
 			}
 		}
-		catch (IOException e) {
-			System.out.println(e.getMessage());
+		else {
+			System.out.println("hit max api call limit of " + maxCallsPerMinute + " per minute");
 			return null;
+		}
+	}
+	
+	public boolean callAllowed() {
+		int n = callHistory.size();
+		
+		if (n >= maxCallsPerMinute) {
+			int oldestIdx = maxCallsPerMinute-1;
+			long oldest = callHistory.get(oldestIdx);
+			
+			// see https://stackoverflow.com/a/11882964/10200417
+			calendar.setTime(new Date());
+			calendar.add(Calendar.MINUTE, -1);
+			if (oldest > calendar.getTime().getTime()) {
+				// too many calls within the last minute; call not allowed
+				return false;
+			}
+			else {
+				// clear old calls
+				int oldCalls = n - oldestIdx;
+				for (int i=0; i<oldCalls; i++) {
+					callHistory.removeLast();
+				}
+				
+				return true;
+			}
+		}
+		else {
+			return true;
 		}
 	}
 	
@@ -153,14 +213,18 @@ public class TwelvedataClient {
 	 * 
 	 * @return {@code true} if the resulting {@link TimeSeries} is not {@code null}.
 	 */
-	public boolean testFetchTimeSeries() {
+	public boolean testFetchTimeSeries(LocalDate from) {
+		if (from == null) {
+			from = LocalDate.now().minusDays(7);
+		}
+		
 		final String TEST_SYMBOL = "AAPL";
 		final String TEST_INTERVAL = BarInterval.DY_1;
-		final LocalDate TEST_START_DATE = LocalDate.of(2021, 1, 1);
-		final LocalDate TEST_END_DATE = LocalDate.of(2021, 1, 7);
-		System.out.println("expecting " + Period.between(TEST_START_DATE, TEST_END_DATE).getDays() + " x " + TEST_INTERVAL);
+		final LocalDate testStartDate = from;
+		final LocalDate TEST_END_DATE = testStartDate.plusDays(7);
+		System.out.println("expecting " + Period.between(testStartDate, TEST_END_DATE).getDays() + " x " + TEST_INTERVAL);
 		
-		TimeSeries timeSeries = fetchTimeSeries(TEST_SYMBOL, TEST_INTERVAL, TEST_START_DATE, TEST_END_DATE);
+		TimeSeries timeSeries = fetchTimeSeries(TEST_SYMBOL, TEST_INTERVAL, testStartDate, TEST_END_DATE);
 		if (timeSeries != null) {
 			System.out.println("timeSeries.meta = " + timeSeries.meta);
 			for (int i=0; i<timeSeries.values.size(); i++) {
