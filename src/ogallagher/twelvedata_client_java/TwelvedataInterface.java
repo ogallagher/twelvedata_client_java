@@ -36,6 +36,22 @@ public interface TwelvedataInterface {
 		@Query("apikey") String apiKey
 	);
 	
+	/**
+	 * Perform a security symbol lookup to retrieve important identifying information.
+	 * 
+	 * @param symbol Security symbol (ex. ABC).
+	 * @param outputSize Maximum number of results. Must be less or equal to 120.
+	 * 
+	 * @return Matching securities in json format.
+	 */
+	@GET(
+		"symbol_search"
+	)
+	Call<SecuritySet> symbolSearch(
+		@Query("symbol") String symbol,
+		@Query("outputsize") int outputSize
+	);
+	
 	public class BarInterval {
 		public static final String 
 			MIN_1 = "1min",
@@ -63,6 +79,10 @@ public interface TwelvedataInterface {
 			this.message = message;
 		}
 		
+		public boolean isFailure() {
+			return code != null;
+		}
+		
 		public String toString() {
 			return "TimeSeries.Failure("
 				+ code + ","
@@ -80,10 +100,6 @@ public interface TwelvedataInterface {
 	public class TimeSeries extends Failure {
 		public Meta meta = null;
 		public ArrayList<TradeBar> values = null;
-		
-		public boolean isFailure() {
-			return code != null;
-		}
 		
 		public class Meta {
 			public String symbol;
@@ -120,6 +136,54 @@ public interface TwelvedataInterface {
 					+ close + ","
 					+ volume
 					+ ")";
+			}
+		}
+	}
+	
+	public class SecurityType {
+		public static final String
+			COMMON_STOCK = "Common Stock",
+			ETF = "ETF";
+	}
+	
+	public class SecuritySet extends Failure {
+		public ArrayList<Security> data = null;
+		
+		public String status;
+		
+		public class Security {
+			/**
+			 * Security symbol.
+			 */
+			public String symbol;
+			/**
+			 * Long name.
+			 */
+			public String instrument_name;
+			/**
+			 * Exchange symbol, ex. {@code NYSE}.
+			 */
+			public String exchange;
+			/**
+			 * Exchange timezone, ex. {@code America/New York}.
+			 */
+			public String exchange_timezone;
+			/**
+			 * Security type, ex. {@code Common Stock}, {@code ETF}.
+			 */
+			public String instrument_type;
+			/**
+			 * Security home country, ex. {@code United States}.
+			 */
+			public String country;
+			/**
+			 * Security quote currency, ex. {@code USD}.
+			 */
+			public String currency;
+			
+			@Override
+			public String toString() {
+				return "Security(symbol=" + symbol + ", exchange=" + exchange + ")";
 			}
 		}
 	}

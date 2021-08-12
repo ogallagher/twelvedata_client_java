@@ -16,6 +16,7 @@ import com.google.gson.stream.JsonReader;
 import ogallagher.temp_fx_logger.System;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.Failure;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.SecuritySet;
 import ogallagher.twelvedata_client_java.TwelvedataInterface.TimeSeries;
 
 import retrofit2.Response;
@@ -34,7 +35,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  */
 public class TwelvedataClient {
-	public static final String VERSION = "0.1.0";
+	public static final String VERSION = "0.2.0";
 	
 	public static final String API_PREFIX = "https://api.twelvedata.com";
 	
@@ -132,7 +133,7 @@ public class TwelvedataClient {
 	 * @param startDate Start date.
 	 * @param endDate End date.
 	 * 
-	 * @return {@link TimeSeries} or <code>null<code>.
+	 * @return {@link TimeSeries} or {@code null}.
 	 */
 	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDate startDate, LocalDate endDate) {
 		if (callAllowed()) {
@@ -168,6 +169,63 @@ public class TwelvedataClient {
 				callHistory.addFirst(new Date().getTime());
 				return out;
 			}
+			catch (IOException e) {
+				System.out.println(e.getMessage());
+				return null;
+			}
+		}
+		else {
+			System.out.println("hit max api call limit of " + maxCallsPerMinute + " per minute");
+			return null;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param symbol Security symbol.
+	 * @param maxResults Max number of results. Will be constrained to be within the range {@code [1..120]}.
+	 * 
+	 * @return {@link SecuritySet} or {@code null}.
+	 */
+	public SecuritySet symbolLookup(String symbol, int maxResults) {
+		if (maxResults < 1) {
+			maxResults = 1;
+		}
+		else if (maxResults > 120) {
+			maxResults = 120;
+		}
+		
+		if (callAllowed()) {
+			System.out.println("performing symbol lookup for " + symbol);
+			try {
+				Response<SecuritySet> res = api
+					.symbolSearch(symbol, maxResults)
+					.execute();
+				
+				SecuritySet out = null;
+				
+				if (res != null) {
+					if (res.isSuccessful()) {
+						SecuritySet securitySet = res.body();
+						
+						if (!securitySet.isFailure()) {
+							System.out.println("fetched " + securitySet.data.size() + " matching securities");
+							out = securitySet;
+						}
+						else {
+							System.out.println(((Failure) securitySet).toString());
+						}
+					}
+					else {
+						System.out.println(res.errorBody().string());
+					}
+				}
+				else {
+					System.out.println("http api response is null");
+				}
+				
+				return out;
+			} 
 			catch (IOException e) {
 				System.out.println(e.getMessage());
 				return null;

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import ogallagher.temp_fx_logger.System;
+import ogallagher.twelvedata_client_java.TwelvedataInterface.SecuritySet;
 
 /**
  * Test TwelvedataClient with a dummy parent application.
@@ -39,6 +40,23 @@ public class TestDriver {
 		@Override
 		public void start(Stage primaryStage) throws Exception {
 			TwelvedataClient tdclient = new TwelvedataClient();
+			
+			// test symbol lookup
+			
+			String symbolPrefix = "AA";
+			SecuritySet securities = tdclient.symbolLookup(symbolPrefix, 10);
+			if (securities != null) {
+				System.out.println("symbol lookup success");
+				
+				for (SecuritySet.Security security : securities.data) {
+					System.out.println(security);
+				}
+			}
+			else {
+				System.out.println("failed to lookup symbol " + symbolPrefix);
+			}
+			
+			// test price history fetch
 			
 			boolean passed = true;
 			int monthsBack = 30;
