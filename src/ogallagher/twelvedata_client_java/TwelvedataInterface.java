@@ -69,7 +69,7 @@ public interface TwelvedataInterface {
 			WK_1 = "1week", 
 			MO_1 = "1month";
 		
-		public LocalDateTime offsetBars(LocalDateTime base, String barWidth, long offset) {
+		public static LocalDateTime offsetBars(LocalDateTime base, String barWidth, long offset) {
 			switch (barWidth) {
 				case BarInterval.HR_1:
 					return base.plusHours(offset);
