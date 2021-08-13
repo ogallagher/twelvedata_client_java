@@ -5,6 +5,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Period;
 import java.util.Calendar;
 import java.util.Date;
@@ -130,12 +132,12 @@ public class TwelvedataClient {
 	 * 
 	 * @param symbol Security symbol.
 	 * @param interval Trade bar width.
-	 * @param startDate Start date.
-	 * @param endDate End date.
+	 * @param startDate Start datetime.
+	 * @param endDate End datetime.
 	 * 
 	 * @return {@link TimeSeries} or {@code null}.
 	 */
-	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDate startDate, LocalDate endDate) {
+	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime startDate, LocalDateTime endDate) {
 		if (callAllowed()) {
 			try {
 				System.out.println("fetching time series");
@@ -282,7 +284,11 @@ public class TwelvedataClient {
 		final LocalDate TEST_END_DATE = testStartDate.plusDays(7);
 		System.out.println("expecting " + Period.between(testStartDate, TEST_END_DATE).getDays() + " x " + TEST_INTERVAL);
 		
-		TimeSeries timeSeries = fetchTimeSeries(TEST_SYMBOL, TEST_INTERVAL, testStartDate, TEST_END_DATE);
+		TimeSeries timeSeries = fetchTimeSeries(
+				TEST_SYMBOL, 
+				TEST_INTERVAL, 
+				LocalDateTime.of(testStartDate, LocalTime.MIDNIGHT), 
+				LocalDateTime.of(TEST_END_DATE, LocalTime.MIDNIGHT));
 		if (timeSeries != null) {
 			System.out.println("timeSeries.meta = " + timeSeries.meta);
 			for (int i=0; i<timeSeries.values.size(); i++) {

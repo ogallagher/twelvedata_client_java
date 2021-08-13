@@ -119,6 +119,9 @@ public interface TwelvedataInterface {
 	/**
 	 * A chronological series of historical trade bars over time.
 	 * 
+	 * Note that trade bars in the series are not explicitly ordered here, but are chronologically descending
+	 * by default as returned from the twelvedata api.
+	 * 
 	 * @author Owen Gallagher
 	 *
 	 */
