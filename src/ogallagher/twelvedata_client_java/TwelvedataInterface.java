@@ -1,7 +1,9 @@
 package ogallagher.twelvedata_client_java;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -66,6 +68,29 @@ public interface TwelvedataInterface {
 			DY_1 = "1day", 
 			WK_1 = "1week", 
 			MO_1 = "1month";
+		
+		public LocalDateTime offsetBars(LocalDateTime base, String barWidth, long offset) {
+			switch (barWidth) {
+				case BarInterval.HR_1:
+					return base.plusHours(offset);
+					
+				case BarInterval.HR_2:
+					return base.plusHours(2*offset);
+					
+				case BarInterval.HR_4:
+					return base.plusHours(4*offset);
+					
+				case BarInterval.HR_8:
+					return base.plusHours(8*offset);
+					
+				case BarInterval.DY_1:
+					return base.plusDays(offset);
+					
+				default:
+					System.out.println("WARNING: unimplemented bar width " + barWidth + " for datetime offsets");
+					return null;
+			}
+		}
 	}
 	
 	public class Failure {
