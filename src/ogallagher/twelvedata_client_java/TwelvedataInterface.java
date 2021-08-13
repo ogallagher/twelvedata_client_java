@@ -3,7 +3,6 @@ package ogallagher.twelvedata_client_java;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-import ogallagher.twelvedata_client_java.TwelvedataInterface.BarInterval;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -153,7 +152,7 @@ public interface TwelvedataInterface {
 			public float high;
 			public float low;
 			public float close;
-			public int volume;
+			public long volume;
 			
 			public String toString() {
 				return "TradeBar("
