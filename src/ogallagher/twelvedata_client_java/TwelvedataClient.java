@@ -139,45 +139,51 @@ public class TwelvedataClient {
 	 */
 	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime startDate, LocalDateTime endDate) {
 		if (callAllowed()) {
-			try {
-				System.out.println("fetching time series");
-				Response<TimeSeries> res = api
-					.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
-					.execute();
-				
-				TimeSeries out = null;
-				
-				if (res != null) {
-					if (res.isSuccessful()) {
-						TimeSeries timeSeries = res.body();
-						
-						if (!timeSeries.isFailure()) {
-							System.out.println("fetched time series of length " + timeSeries.values.size());
-							out = timeSeries;
+			if (startDate.isBefore(endDate)) {
+				try {
+					System.out.println("DEBUG fetching time series");
+					Response<TimeSeries> res = api
+						.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
+						.execute();
+					
+					TimeSeries out = null;
+					
+					if (res != null) {
+						if (res.isSuccessful()) {
+							TimeSeries timeSeries = res.body();
+							
+							if (!timeSeries.isFailure()) {
+								System.out.println("DEBUG fetched time series of length " + timeSeries.values.size());
+								out = timeSeries;
+							}
+							else {
+								System.out.println(((Failure) timeSeries).toString());
+								System.out.println("ERROR api");
+							}
 						}
 						else {
-							System.out.println(((Failure) timeSeries).toString());
-							System.out.println("api error");
+							System.out.println(res.errorBody().string());
 						}
 					}
 					else {
-						System.out.println(res.errorBody().string());
+						System.out.println("ERROR http api response is null");
 					}
+					
+					callHistory.addFirst(new Date().getTime());
+					return out;
 				}
-				else {
-					System.out.println("http api response is null");
+				catch (IOException e) {
+					System.out.println(e.getMessage());
+					return null;
 				}
-				
-				callHistory.addFirst(new Date().getTime());
-				return out;
 			}
-			catch (IOException e) {
-				System.out.println(e.getMessage());
+			else {
+				System.out.println("ERROR start " + startDate + " must be less than end " + endDate);
 				return null;
 			}
 		}
 		else {
-			System.out.println("hit max api call limit of " + maxCallsPerMinute + " per minute");
+			System.out.println("ERROR hit max api call limit of " + maxCallsPerMinute + " per minute");
 			return null;
 		}
 	}
