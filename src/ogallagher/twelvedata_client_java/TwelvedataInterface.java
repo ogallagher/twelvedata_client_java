@@ -103,6 +103,9 @@ public interface TwelvedataInterface {
 			this.message = message;
 		}
 		
+		/**
+		 * @return {@code true} if this instance is a true failure, where {@code code != null}.
+		 */
 		public boolean isFailure() {
 			return code != null;
 		}
@@ -112,6 +115,23 @@ public interface TwelvedataInterface {
 				+ code + ","
 				+ message 
 				+ ")";
+		}
+		
+		/**
+		 * Known API failure error codes.
+		 * 
+		 * @author Owen Gallagher
+		 * @since 2021-08-28
+		 */
+		public class ErrorCode {
+			public static final int API_KEY = 401;
+			
+			// negative codes are internal to this package
+			
+			public static final int NULL_RESPONSE = -1;
+			public static final int NO_COMMS = -2;
+			public static final int INVALID_DATES = -3;
+			public static final int CALL_LIMIT = -4;
 		}
 	}
 	
@@ -127,6 +147,16 @@ public interface TwelvedataInterface {
 	public class TimeSeries extends Failure {
 		public Meta meta = null;
 		public ArrayList<TradeBar> values = null;
+		
+		/**
+		 * Failure constructor; calls {@link Failure#Failure(int, String)}.
+		 * 
+		 * @param errorCode Error code.
+		 * @param message Error message.
+		 */
+		public TimeSeries(int errorCode, String message) {
+			super(errorCode, message);
+		}
 		
 		public class Meta {
 			public String symbol;

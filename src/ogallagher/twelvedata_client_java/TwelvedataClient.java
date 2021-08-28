@@ -135,7 +135,7 @@ public class TwelvedataClient {
 	 * @param startDate Start datetime.
 	 * @param endDate End datetime.
 	 * 
-	 * @return {@link TimeSeries} or {@code null}.
+	 * @return {@link TimeSeries}. On failure, {@link TimeSeries#isFailure()} will return {@code true}.
 	 */
 	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime startDate, LocalDateTime endDate) {
 		if (callAllowed()) {
@@ -146,7 +146,7 @@ public class TwelvedataClient {
 						.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
 						.execute();
 					
-					TimeSeries out = null;
+					TimeSeries out;
 					
 					if (res != null) {
 						if (res.isSuccessful()) {
@@ -154,37 +154,31 @@ public class TwelvedataClient {
 							
 							if (!timeSeries.isFailure()) {
 								System.out.println("DEBUG fetched time series of length " + timeSeries.values.size());
-								out = timeSeries;
 							}
-							else {
-								System.out.println(((Failure) timeSeries).toString());
-								System.out.println("ERROR api");
-							}
+							
+							out = timeSeries;
 						}
 						else {
-							System.out.println(res.errorBody().string());
+							out = new TimeSeries(res.code(), res.errorBody().string());
 						}
 					}
 					else {
-						System.out.println("ERROR http api response is null");
+						out = new TimeSeries(Failure.ErrorCode.NULL_RESPONSE, "http api response is null");
 					}
 					
 					callHistory.addFirst(new Date().getTime());
 					return out;
 				}
 				catch (IOException e) {
-					System.out.println(e.getMessage());
-					return null;
+					return new TimeSeries(Failure.ErrorCode.NO_COMMS, e.getMessage());
 				}
 			}
 			else {
-				System.out.println("ERROR start " + startDate + " must be less than end " + endDate);
-				return null;
+				return new TimeSeries(Failure.ErrorCode.INVALID_DATES, "start " + startDate + " must be less than end " + endDate);
 			}
 		}
 		else {
-			System.out.println("ERROR hit max api call limit of " + maxCallsPerMinute + " per minute");
-			return null;
+			return new TimeSeries(Failure.ErrorCode.CALL_LIMIT, "ERROR hit max api call limit of " + maxCallsPerMinute + " per minute");
 		}
 	}
 	
@@ -277,7 +271,7 @@ public class TwelvedataClient {
 	/**
 	 * Attempts to get one week of daily close prices for AAPL.
 	 * 
-	 * @return {@code true} if the resulting {@link TimeSeries} is not {@code null}.
+	 * @return {@code true} if {@link TimeSeries#isFailure() TimeSeries.isFailure() == false}.
 	 */
 	public boolean testFetchTimeSeries(LocalDate from) {
 		if (from == null) {
@@ -295,7 +289,7 @@ public class TwelvedataClient {
 				TEST_INTERVAL, 
 				LocalDateTime.of(testStartDate, LocalTime.MIDNIGHT), 
 				LocalDateTime.of(TEST_END_DATE, LocalTime.MIDNIGHT));
-		if (timeSeries != null) {
+		if (!timeSeries.isFailure()) {
 			System.out.println("timeSeries.meta = " + timeSeries.meta);
 			for (int i=0; i<timeSeries.values.size(); i++) {
 				System.out.println("timeSeries.values[" + i + "] = " + timeSeries.values.get(i));
@@ -303,6 +297,7 @@ public class TwelvedataClient {
 			return true;
 		}
 		else {
+			System.out.println(((Failure)timeSeries).toString());
 			return false;
 		}
 	}
