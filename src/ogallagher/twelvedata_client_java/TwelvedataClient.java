@@ -302,6 +302,18 @@ public class TwelvedataClient {
 		}
 	}
 	
+	public String getKey() {
+		return key;
+	}
+	
+	public void setKey(String key) {
+		this.key = key;
+	}
+	
+	public int getMaxCallsPerMinute() {
+		return maxCallsPerMinute;
+	}
+	
 	public String toString() {
 		String out = 
 			"TwelvedataClient(" + 
