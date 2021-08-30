@@ -68,8 +68,19 @@ public interface TwelvedataInterface {
 			WK_1 = "1week", 
 			MO_1 = "1month";
 		
+		/**
+		 * Calculate a new datetime as {@code base + barWidth * offset}.
+		 * 
+		 * @param base Base datetime to offset from.
+		 * @param barWidth The width of the bar, corresponding to a time duration.
+		 * @param offset Number of bars away from the base.
+		 * 
+		 * @return Calculated datetime, offset bars from {@code base}, or {@code null} if the given
+		 * bar width is not supported.
+		 */
 		public static LocalDateTime offsetBars(LocalDateTime base, String barWidth, long offset) {
 			switch (barWidth) {
+				// hours
 				case BarInterval.HR_1:
 					return base.plusHours(offset);
 					
@@ -81,9 +92,34 @@ public interface TwelvedataInterface {
 					
 				case BarInterval.HR_8:
 					return base.plusHours(8*offset);
-					
+				
+				// days
 				case BarInterval.DY_1:
 					return base.plusDays(offset);
+					
+				// minutes
+				case BarInterval.MIN_1:
+					return base.plusMinutes(offset);
+					
+				case BarInterval.MIN_5:
+					return base.plusMinutes(5*offset);
+					
+				case BarInterval.MIN_15:
+					return base.plusMinutes(15*offset);
+					
+				case BarInterval.MIN_30:
+					return base.plusMinutes(30*offset);
+					
+				case BarInterval.MIN_45:
+					return base.plusMinutes(45*offset);
+					
+				// weeks
+				case BarInterval.WK_1:
+					return base.plusWeeks(offset);
+					
+				// months
+				case BarInterval.MO_1:
+					return base.plusMonths(offset);
 					
 				default:
 					System.out.println("WARNING: unimplemented bar width " + barWidth + " for datetime offsets");
