@@ -160,13 +160,32 @@ public interface TwelvedataInterface {
 		 * @since 2021-08-28
 		 */
 		public class ErrorCode {
+			/**
+			 * No data available between the specified datetimes.
+			 */
+			public static final int NO_BARS = 400;
+			/**
+			 * Incorrect or missing API key.
+			 */
 			public static final int API_KEY = 401;
 			
 			// negative codes are internal to this package
 			
+			/**
+			 * No response from the server.
+			 */
 			public static final int NULL_RESPONSE = -1;
+			/**
+			 * Unable to make a connection to the server.
+			 */
 			public static final int NO_COMMS = -2;
+			/**
+			 * Invalid start and end dates (ex. end < start).
+			 */
 			public static final int INVALID_DATES = -3;
+			/**
+			 * Limit of max API calls per minute exceeded.
+			 */
 			public static final int CALL_LIMIT = -4;
 		}
 	}
