@@ -1,5 +1,6 @@
 package ogallagher.twelvedata_client_java;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -18,6 +19,10 @@ public interface TwelvedataInterface {
 	/**
 	 * Fetch a trade bar sequence for a given security over a specified interval.
 	 * 
+	 * Note that when specifying a datetime boundary and number of bars, you have to use {@code endDate}
+	 * with {@code outputSize} to get desired results. Using {@code startDate} will cause the datetime to
+	 * just be ignored.
+	 * 
 	 * @param symbol Security symbol (ex. ABC).
 	 * @param interval Width of each trade bar.
 	 * @param startDate When to begin fetching trade bars.
@@ -34,6 +39,29 @@ public interface TwelvedataInterface {
 		@Query("interval") String interval,
 		@Query("start_date") String startDate,
 		@Query("end_date") String endDate,
+		@Query("apikey") String apiKey
+	);
+	
+	/**
+	 * Fetch a trade bar sequence for a given security, ending at {@code endDate} and containing 
+	 * {@code outputSize} bars.
+	 * 
+	 * @param symbol Security symbol (ex. ABC).
+	 * @param interval Width of each trade bar.
+	 * @param endDate When to stop fetching trade bars.
+	 * @param outputSize Number of trade bars to include.
+	 * @param apiKey twelvedata API key.
+	 * 
+	 * @return trade bars in json format.
+	 */
+	@GET(
+		"time_series?&format=json"
+	)
+	Call<TimeSeries> timeSeries(
+		@Query("symbol") String symbol,
+		@Query("interval") String interval,
+		@Query("end_date") String endDate,
+		@Query("outputsize") int outputSize,
 		@Query("apikey") String apiKey
 	);
 	
@@ -67,6 +95,104 @@ public interface TwelvedataInterface {
 			DY_1 = "1day", 
 			WK_1 = "1week", 
 			MO_1 = "1month";
+		
+		/**
+		 * An enumeration encapsulating the mapping between bar width/interval strings and {@link Duration durations}.
+		 * 
+		 * @author Owen Gallagher
+		 * @since 2021-08-30
+		 */
+		protected static enum IntervalDuration {
+			MIN_1(BarInterval.MIN_1),
+			MIN_5(BarInterval.MIN_5),
+			MIN_15(BarInterval.MIN_15),
+			MIN_30(BarInterval.MIN_30),
+			MIN_45(BarInterval.MIN_45),
+			HR_1(BarInterval.HR_1),
+			HR_2(BarInterval.HR_2),
+			HR_4(BarInterval.HR_4),
+			HR_8(BarInterval.HR_8),
+			DY_1(BarInterval.DY_1),
+			WK_1(BarInterval.WK_1),
+			MO_1(BarInterval.MO_1);
+			
+			private String string;
+			private Duration duration;
+			
+			private IntervalDuration(String string) {
+				this.string = string;
+				
+				switch (string) {
+					case BarInterval.MIN_1:
+						duration = Duration.ofMinutes(1);
+						break;
+						
+					case BarInterval.MIN_5:
+						duration = Duration.ofMinutes(5);
+						break;
+						
+					case BarInterval.MIN_15:
+						duration = Duration.ofMinutes(15);
+						break;
+						
+					case BarInterval.MIN_30:
+						duration = Duration.ofMinutes(30);
+						break;
+						
+					case BarInterval.MIN_45:
+						duration = Duration.ofMinutes(45);
+						break;
+						
+					case BarInterval.HR_1:
+						duration = Duration.ofHours(1);
+						break;
+						
+					case BarInterval.HR_2:
+						duration = Duration.ofHours(2);
+						break;
+						
+					case BarInterval.HR_4:
+						duration = Duration.ofHours(4);
+						break;
+						
+					case BarInterval.HR_8:
+						duration = Duration.ofHours(8);
+						break;
+					
+					case BarInterval.DY_1:
+						duration = Duration.ofDays(1);
+						break;
+						
+					case BarInterval.WK_1:
+						duration = Duration.ofDays(7);
+						break;
+						
+					case BarInterval.MO_1:
+						duration = Duration.ofDays(30);
+						break;
+						
+					default:
+						System.out.println("ERROR: unknown bar width " + string);
+						duration = null;
+						break;
+				}
+			}
+			
+			/**
+			 * @return String value for this bar width.
+			 */
+			@Override
+			public String toString() {
+				return string;
+			}
+			
+			/**
+			 * @return {@link Duration} value for this bar width.
+			 */
+			public Duration getDuration() {
+				return duration;
+			}
+		}
 		
 		/**
 		 * Calculate a new datetime as {@code base + barWidth * offset}.
@@ -125,6 +251,39 @@ public interface TwelvedataInterface {
 					System.out.println("WARNING: unimplemented bar width " + barWidth + " for datetime offsets");
 					return null;
 			}
+		}
+		
+		/**
+		 * Similar to {@link #offsetBars(LocalDateTime, String, long) offsetBars}, but with an additional constraint
+		 * that ensures the number of trade bars is at least {@code abs(offsetMin)}.
+		 * 
+		 * @throws UnsupportedOperationException This method is not yet implemented.
+		 * 
+		 * @param base Base datetime to offset from.
+		 * @param barWidth The width of a bar, corresponding to a time duration.
+		 * @param offsetMin Estimated/minimum number of bars away from the base.
+		 * @param exchange The exchange to whose asset these bars belong.
+		 * 
+		 * @return Calculated datetime, displaced from {@code base}.
+		 */
+		@SuppressWarnings("unused")
+		public static LocalDateTime offsetBarsCounted(LocalDateTime base, String barWidth, long offsetMin, String exchange) throws UnsupportedOperationException {
+			Duration barDuration = IntervalDuration.valueOf(barWidth).getDuration();
+			Duration offsetDuration = barDuration.multipliedBy(offsetMin);
+			
+			// determine preliminary dest date
+			LocalDateTime dest = base.plus(offsetDuration);
+			
+			// count without accounting for holidays, weekends, closures
+			long barCount = Math.abs(offsetMin);
+			
+			// subtract holidays, weekends, closures
+			
+			// add back needed bars
+			
+			// return new dest
+			
+			throw new UnsupportedOperationException("offsetBarsCounted not yet implemented");
 		}
 	}
 	

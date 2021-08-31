@@ -37,7 +37,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  */
 public class TwelvedataClient {
-	public static final String VERSION = "0.2.0";
+	public static final String VERSION = "0.3.0";
 	
 	public static final String API_PREFIX = "https://api.twelvedata.com";
 	
@@ -129,7 +129,110 @@ public class TwelvedataClient {
 	}
 	
 	/**
+	 * Private version of the api time series fetch with all possible arguments, handling each valid combination
+	 * and routing to the appropriate {@code TwelvedataInterface} api call.
 	 * 
+	 * @param symbol Security symbol.
+	 * @param interval Trade bar width.
+	 * @param startDate Start datetime.
+	 * @param endDate End datetime.
+	 * @param barCount Number of bars.
+	 * 
+	 * @return {@link TimeSeries}. On failure, {@link TimeSeries#isFailure()} will return {@code true}.
+	 */
+	private TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime startDate, LocalDateTime endDate, int barCount) {
+		if (callAllowed()) {
+			if (startDate != null) {
+				// interval between start and end
+				if (startDate.isBefore(endDate)) {
+					try {
+						System.out.println("DEBUG fetching time series between start and end");
+						Response<TimeSeries> res = api
+							.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
+							.execute();
+						
+						TimeSeries out;
+						
+						if (res != null) {
+							if (res.isSuccessful()) {
+								TimeSeries timeSeries = res.body();
+								
+								if (!timeSeries.isFailure()) {
+									System.out.println("DEBUG fetched time series of length " + timeSeries.values.size());
+								}
+								
+								out = timeSeries;
+							}
+							else {
+								out = new TimeSeries(res.code(), res.errorBody().string());
+							}
+						}
+						else {
+							out = new TimeSeries(Failure.ErrorCode.NULL_RESPONSE, "http api response is null");
+						}
+						
+						callHistory.addFirst(new Date().getTime());
+						return out;
+					}
+					catch (IOException e) {
+						return new TimeSeries(Failure.ErrorCode.NO_COMMS, e.getMessage());
+					}
+				}
+				else {
+					return new TimeSeries(Failure.ErrorCode.INVALID_DATES, "start " + startDate + " must be less than end " + endDate);
+				}
+			}
+			else {
+				// count until end
+				try {
+					System.out.println("DEBUG fetching time series of " + barCount + " bars until end");
+					Response<TimeSeries> res = api
+						.timeSeries(symbol, interval, endDate.toString(), barCount, key)
+						.execute();
+					
+					callHistory.addFirst(new Date().getTime());
+					
+					if (res != null) {
+						if (res.isSuccessful()) {
+							TimeSeries timeSeries = res.body();
+							
+							if (!timeSeries.isFailure()) {
+								System.out.print("DEBUG fetched time series of length " + timeSeries.values.size());
+							}
+							
+							return timeSeries;
+						}
+						else {
+							return new TimeSeries(res.code(), res.errorBody().string());
+						}
+					}
+					else {
+						return new TimeSeries(Failure.ErrorCode.NULL_RESPONSE, "http api response is null");
+					}
+				}
+				catch (IOException e) {
+					return new TimeSeries(Failure.ErrorCode.NO_COMMS, e.getMessage());
+				}
+			}
+		}
+		else {
+			return new TimeSeries(Failure.ErrorCode.CALL_LIMIT, "ERROR hit max api call limit of " + maxCallsPerMinute + " per minute");
+		}
+	}
+	
+	/**
+	 * @param symbol Security symbol.
+	 * @param interval Trade bar width.
+	 * @param endDate End datetime.
+	 * @param barCount Number of bars.
+	 * 
+	 * @return {@link TimeSeries}. On failure, {@link TimeSeries#isFailure()} will return {@code true}.
+	 */
+	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime endDate, int barCount) {
+		return fetchTimeSeries(symbol, interval, null, endDate, barCount);
+	}
+	
+	/**
 	 * @param symbol Security symbol.
 	 * @param interval Trade bar width.
 	 * @param startDate Start datetime.
@@ -138,48 +241,7 @@ public class TwelvedataClient {
 	 * @return {@link TimeSeries}. On failure, {@link TimeSeries#isFailure()} will return {@code true}.
 	 */
 	public TimeSeries fetchTimeSeries(String symbol, String interval, LocalDateTime startDate, LocalDateTime endDate) {
-		if (callAllowed()) {
-			if (startDate.isBefore(endDate)) {
-				try {
-					System.out.println("DEBUG fetching time series");
-					Response<TimeSeries> res = api
-						.timeSeries(symbol, interval, startDate.toString(), endDate.toString(), key)
-						.execute();
-					
-					TimeSeries out;
-					
-					if (res != null) {
-						if (res.isSuccessful()) {
-							TimeSeries timeSeries = res.body();
-							
-							if (!timeSeries.isFailure()) {
-								System.out.println("DEBUG fetched time series of length " + timeSeries.values.size());
-							}
-							
-							out = timeSeries;
-						}
-						else {
-							out = new TimeSeries(res.code(), res.errorBody().string());
-						}
-					}
-					else {
-						out = new TimeSeries(Failure.ErrorCode.NULL_RESPONSE, "http api response is null");
-					}
-					
-					callHistory.addFirst(new Date().getTime());
-					return out;
-				}
-				catch (IOException e) {
-					return new TimeSeries(Failure.ErrorCode.NO_COMMS, e.getMessage());
-				}
-			}
-			else {
-				return new TimeSeries(Failure.ErrorCode.INVALID_DATES, "start " + startDate + " must be less than end " + endDate);
-			}
-		}
-		else {
-			return new TimeSeries(Failure.ErrorCode.CALL_LIMIT, "ERROR hit max api call limit of " + maxCallsPerMinute + " per minute");
-		}
+		return fetchTimeSeries(symbol, interval, startDate, endDate, -1);
 	}
 	
 	/**
