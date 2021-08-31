@@ -109,6 +109,25 @@ public class TestDriver {
 					System.out.println("ERROR failed to fetch time series from " + start + ":\n" + ((Failure)bars));
 				}
 			}
+			
+			// test fetch with bar count
+			
+			doTest = true;
+			if (doTest) {
+				LocalDateTime end = LocalDateTime.now().minusMonths(13);
+				
+				// 1hr, 30 bars
+				TimeSeries bars = tdclient.fetchTimeSeries("AAPL", BarInterval.HR_1, end, 30);
+				if (!bars.isFailure()) {
+					System.out.println("time series of " + bars.values.size() + " bars until " + end + ":");
+					for (TradeBar bar : bars.values) {
+						System.out.println("\t" + bar.toString());
+					}
+				}
+				else {
+					System.out.println("ERROR failed to fetch time series with bar count until " + end + ":\n" + ((Failure)bars));
+				}
+			}
 		}
 	}
 }
